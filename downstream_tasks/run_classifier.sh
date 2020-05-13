@@ -8,9 +8,9 @@ for EPOCHS in 10 ; do # 3 4 5; do
 		for BATCH_SZ in 32; do #16 32 ; do
 			MAX_SEQ_LEN=150
 
-			DATA_DIR=/home/mrbarnes/data/mednli/ #Modify this to be the path to the MedNLI data
-			OUTPUT_DIR=/home/mrbarnes/bluebert/mednli_distilbluebert_update_match/ #Modify this to be the path to your output directory
-			CLINICAL_BERT_LOC=/home/mrbarnes/bluebert # /home/mrbarnes/bluebert #Modify this to be the path to the clinical BERT model
+			DATA_DIR=/usr/local/share/cambia_nlp/ #Modify this to be the path to the MedNLI data
+			OUTPUT_DIR=/home/mrbarnes/output/goc_distilbluebert/ #Modify this to be the path to your output directory
+			CLINICAL_BERT_LOC=/home/mrbarnes/models/distilbluebert_train_output # /home/mrbarnes/bluebert #Modify this to be the path to the clinical BERT model
 
 			echo $OUTPUT_DIR
 
