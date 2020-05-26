@@ -253,6 +253,55 @@ class MedNLIProcessor(DataProcessor):
         return examples
 
 
+class GOCProcessor(DataProcessor):
+    def _chunks(self, l, n):
+        """Yield successive n-sized chunks from l."""
+        for i in range(0, len(l), n):
+            yield l[i:i + n]
+
+
+    def get_train_examples(self, data_dir):
+        """Gets a collection of `InputExample`s for the train set."""
+        file_path = os.path.join(data_dir, "merged_splits.db")
+        set_ = "TRAINING_SET"
+        return self._create_examples(file_path, set_)
+
+    def get_dev_examples(self, data_dir):
+        """Gets a collection of `InputExample`s for the dev set."""
+        file_path = os.path.join(data_dir, "merged_splits.db")
+        set_ = "DEV_SET"
+        return self._create_examples(file_path, set_)
+
+    def get_test_examples(self, data_dir):
+        """Gets a collection of `InputExample`s for the test set."""
+        file_path = os.path.join(data_dir, "merged_splits.db")
+        set_ = "TEST_SET"
+        return self._create_examples(file_path, set_)
+
+
+
+
+    def get_labels(self):
+        """See base class."""
+        return ["pos", "neg"]
+
+    def _create_examples(self, file_path, set_name):
+
+        conn = sqlite3.connect(file_path)
+        curs = conn.cursor()
+        notes = curs.execute("SELECT * FROM %s" % set_name).fetchall()
+        conn.close
+
+        examples = []
+
+        for example in notes:
+            examples.append(
+                InputExample(guid=example[0], text_a=example[1], 
+                    label=example[2]))
+
+        return examples
+
+
 def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer):
     """Loads a data file into a list of `InputBatch`s."""
 
@@ -481,14 +530,16 @@ def main():
         "cola": ColaProcessor,
         "mnli": MnliProcessor,
         "mrpc": MrpcProcessor,
-        "mednli": MedNLIProcessor
+        "mednli": MedNLIProcessor,
+        "goc": GOCProcessor
     }
 
     num_labels_task = {
         "cola": 2,
         "mnli": 3,
         "mrpc": 2,
-        "mednli": 3
+        "mednli": 3,
+        "goc": 2,
     }
 
     if args.local_rank == -1 or args.no_cuda:
