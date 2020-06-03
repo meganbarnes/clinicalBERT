@@ -81,11 +81,6 @@ DISTILBERT_INPUTS_DOCSTRING = r"""
             than the model's internal embedding lookup matrix.
 """
 
-@add_start_docstrings(
-    """DistilBert Model transformer with a sequence classification/regression head on top (a linear layer on top of
-    the pooled output) e.g. for GLUE tasks. """,
-    DISTILBERT_START_DOCSTRING,
-)
 class DocDistilBertForSequenceClassification(DistilBertPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
@@ -108,7 +103,6 @@ class DocDistilBertForSequenceClassification(DistilBertPreTrainedModel):
 
         self.init_weights()
 
-@add_start_docstrings_to_callable(DISTILBERT_INPUTS_DOCSTRING)
     def forward(self, input_ids=None, attention_mask=None, head_mask=None, inputs_embeds=None, labels=None):
         r"""
         labels (:obj:`torch.LongTensor` of shape :obj:`(batch_size,)`, `optional`, defaults to :obj:`None`):
@@ -151,10 +145,12 @@ class DocDistilBertForSequenceClassification(DistilBertPreTrainedModel):
 
         ##########
 
-        input_ids.view((input_ids.shape[0]*input_ids.shape[1],-1))
+        #print(input_ids.view((input_ids.shape[0]*input_ids.shape[1],-1)).shape)
+        #print(attention_mask.view((attention_mask.shape[0]*attention_mask.shape[1],-1)).shape)
+        #print(head_mask.shape)
 
         distilbert_output = self.distilbert(
-            input_ids=input_ids.view((input_ids.shape[0]*input_ids.shape[1],-1)), attention_mask=attention_mask.view((attention_mask.shape[0]*attention_mask.shape[1],-1)), head_mask=head_mask.view((head_mask.shape[0]*head_mask.shape[1],-1)), inputs_embeds=inputs_embeds
+            input_ids=input_ids.view((input_ids.shape[0]*input_ids.shape[1],-1)), attention_mask=attention_mask.view((attention_mask.shape[0]*attention_mask.shape[1],-1)), head_mask=head_mask, inputs_embeds=inputs_embeds
         ) # (bs, seq_len, dim)
         hidden_state = distilbert_output[0].view((input_ids.shape[0], input_ids.shape[1], input_ids.shape[2], -1))  # (bs, doc_len, seq_len, dim)
         pooled_output = hidden_state[:,:,0]  # (bs, doc_len, dim)

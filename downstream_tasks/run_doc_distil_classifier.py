@@ -312,7 +312,7 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
     features = []
     max_len = 0
 
-    max_sequences_per_document = 22
+    max_sequences_per_document = 88
 
     for (ex_index, example) in enumerate(examples):
         tokens_a = tokenizer.tokenize(example.text_a)
@@ -405,8 +405,8 @@ def convert_documents_to_features(examples, label_list, max_seq_length, tokenize
     features = []
     max_len = 0
 
-    max_sequences_per_document = 22
-    max_input_length = 512
+    max_sequences_per_document = 88
+    max_input_length = 128
     
     for (ex_index, example) in enumerate(examples):
 
@@ -473,7 +473,7 @@ def convert_documents_to_features(examples, label_list, max_seq_length, tokenize
             input_ids += padding
             input_mask += padding
             segment_ids += padding
-
+            #print(len(input_ids), max_seq_length)
             assert len(input_ids) == max_seq_length
             assert len(input_mask) == max_seq_length
             assert len(segment_ids) == max_seq_length
@@ -481,6 +481,14 @@ def convert_documents_to_features(examples, label_list, max_seq_length, tokenize
             input_ids_list.append(input_ids)
             input_mask_list.append(input_mask)
             segment_ids_list.append(segment_ids)
+        #print("STARTING LEN", len(input_ids_list) )
+        # Zero-pad up to the doc length.)
+        padding = [0] * max_seq_length 
+        for i in range(max_sequences_per_document - len(input_ids_list)):
+            input_ids_list.append(padding)
+            input_mask_list.append(padding)
+            segment_ids_list.append(padding)
+        #print("ENDING LEN", len(input_ids_list))
 
         label_id = label_map[example.label]
         if ex_index < 3:
@@ -573,7 +581,7 @@ def setup_parser():
                         action='store_true',
                         help="Set this flag if you are using an uncased model.")
     parser.add_argument("--train_batch_size",
-                        default=32,
+                        default=1,
                         type=int,
                         help="Total batch size for training.")
     parser.add_argument("--eval_batch_size",
@@ -619,6 +627,7 @@ def setup_parser():
     parser.add_argument('--server_ip', type=str, default='', help="Can be used for distant debugging.")
     parser.add_argument('--server_port', type=str, default='', help="Can be used for distant debugging.")
     parser.add_argument('--model_loc', type=str, default='', help="Specify the location of the bio or clinical bert model")
+    parser.add_argument('--freeze_bert', action='store_true')
     return parser
 
 def main():
@@ -722,9 +731,14 @@ def main():
 
     # Prepare model
     cache_dir = args.cache_dir if args.cache_dir else os.path.join(PYTORCH_PRETRAINED_BERT_CACHE, 'distributed_{}'.format(args.local_rank))
-    distilbert = DocDistilBertForSequenceClassification.from_pretrained(args.bert_model,
+    model = DocDistilBertForSequenceClassification.from_pretrained(args.bert_model,
               cache_dir=cache_dir,
               num_labels = num_labels)
+    
+    if args.freeze_bert:
+        print("FREEZING BERT")
+        for param in model.distilbert.parameters():
+            param.requires_grad = False
 
     if args.fp16:
         model.half()
@@ -781,6 +795,8 @@ def main():
         logger.info("  Num examples = %d", len(train_examples))
         logger.info("  Batch size = %d", args.train_batch_size)
         logger.info("  Num steps = %d", num_train_optimization_steps)
+        print(len(train_features[0].input_ids))
+        print(len(train_features[0].input_ids[0]))
         all_input_ids = torch.tensor([f.input_ids for f in train_features], dtype=torch.long)
         all_input_mask = torch.tensor([f.input_mask for f in train_features], dtype=torch.long)
         all_segment_ids = torch.tensor([f.segment_ids for f in train_features], dtype=torch.long)
