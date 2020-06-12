@@ -413,6 +413,16 @@ def accuracy(out, labels):
     outputs = np.argmax(out, axis=1)
     return np.sum(outputs == labels)
 
+# From hugging face distiller.py
+def save_checkpoint(model, dump_path, checkpoint_name: str = "checkpoint.pth"):
+    """
+    Save the current state. Only by the master process.
+    """
+    mdl_to_save = model.module if hasattr(model, "module") else model
+    mdl_to_save.config.save_pretrained(self.dump_path)
+    state_dict = mdl_to_save.state_dict()
+    torch.save(state_dict, os.path.join(self.dump_path, checkpoint_name))
+
 def setup_parser():
     parser = argparse.ArgumentParser()
 
@@ -680,7 +690,7 @@ def main():
         train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=args.train_batch_size)
 
         model.train()
-        for _ in trange(int(args.num_train_epochs), desc="Epoch"):
+        for epoch_num in trange(int(args.num_train_epochs), desc="Epoch"):
             tr_loss = 0
             nb_tr_examples, nb_tr_steps = 0, 0
             for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
@@ -716,6 +726,9 @@ def main():
                     scheduler.step()
                     optimizer.zero_grad()
                     global_step += 1
+
+            # Saving checkpoint
+            save_checkpoint(model, args.output_dir, "epoch_%d_checkpoint.pth" % epoch_num)
 
     if args.do_train:
         # Save a trained model and the associated configuration
